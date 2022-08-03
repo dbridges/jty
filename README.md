@@ -101,3 +101,14 @@ Utility functions for rich console output in the [Janet Language](https://janet-
        (jty/bg "#dec718" " ")
        (jty/bg "#d1de18" " "))
 ```
+
+### Input
+
+`jty` provides two helper functions for asking for input. Both functions can be provided with a default value.
+
+```janet
+(jty/prompt "Name") # prints "Name: " and waits for input.
+(jty/prompt "Confirm" "Y") # returns "Y" if the user does not type input
+(jty/prompt-number "Year") # loops until input can be parsed with scan-number
+(jty/prompt-number "Year" 10) # return 10 if the user does not type input
+```

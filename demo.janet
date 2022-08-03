@@ -62,3 +62,9 @@
        (jty/bg "#de9518" " ")
        (jty/bg "#dec718" " ")
        (jty/bg "#d1de18" " "))
+
+(print (string "Hello " (jty/prompt "Name")))
+(def age (jty/prompt-number "Age"))
+(print (string age " years is a long time"))
+(print (string (jty/prompt-number "Year born" (- ((os/date) :year) age))
+               " was a good year"))

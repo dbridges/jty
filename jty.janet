@@ -93,3 +93,17 @@
     :array (string "\e[48;2;" (col 0) ";" (col 1) ";" (col 2) "m" s "\e[49m")
     :keyword (string "\e[" (get bg-colors col "39") "m" s "\e[49m")
     s))
+
+# Getting input
+(defn prompt [question &opt dflt]
+  (default dflt "")
+  (def default-msg (if (= dflt "") "" (string " [" dflt "]")))
+  (def msg (string question default-msg ": "))
+  (def resp (string/trim (getline msg)))
+  (if (= resp "") (string dflt) resp))
+
+(defn prompt-number [question &opt dflt]
+  (or (scan-number (prompt question dflt))
+      (prompt-number question dflt)))
+
+
