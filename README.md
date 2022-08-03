@@ -1,4 +1,4 @@
-# jty: Janet Typewriter
+# jty
 
 Utility functions for rich console output in the [Janet Language](https://janet-lang.org).
 
