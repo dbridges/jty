@@ -41,7 +41,7 @@
 (defn italic "Formats s as italic text" [s] (string "\e[3m" s "\e[23m"))
 (defn underline "Formats s as underline text" [s] (string "\e[4m" s "\e[24m"))
 (defn blink "Formats s as blinking text" [s] (string "\e[5m" s "\e[25m"))
-(defn reverse "Formats s as inverse text" [s] (string "\e[7m" s "\e[27m"))
+(defn inverse "Formats s as inverse text" [s] (string "\e[7m" s "\e[27m"))
 (defn strikethrough "Formats s as strikethrough text" [s] (string "\e[9m" s "\e[29m"))
 
 # Colors

@@ -37,7 +37,7 @@ Utility functions for rich console output in the [Janet Language](https://janet-
        (jty/italic "italic") " "
        (jty/underline "underline") " "
        (jty/blink "blink") " "
-       (jty/reverse "reverse") " "
+       (jty/inverse "inverse") " "
        (jty/strikethrough "strikethrough"))
 ```
 

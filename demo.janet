@@ -5,7 +5,7 @@
        (jty/italic "italic") " "
        (jty/underline "underline") " "
        (jty/blink "blink") " "
-       (jty/reverse "reverse") " "
+       (jty/inverse "inverse") " "
        (jty/strikethrough "strikethrough"))
 
 # Standard 8 foreground colors
