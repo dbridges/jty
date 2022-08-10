@@ -106,4 +106,8 @@
   (or (scan-number (prompt question dflt))
       (prompt-number question dflt)))
 
-
+(defn confirm [question &opt dflt]
+  (default dflt true)
+  (def dflt-string (if (= dflt true) "y" "n"))
+  (def resp (prompt question dflt-string))
+  (= resp "y"))

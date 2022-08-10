@@ -68,3 +68,6 @@
 (print (string age " years is a long time"))
 (print (string (jty/prompt-number "Year born" (- ((os/date) :year) age))
                " was a good year"))
+
+(print (jty/confirm "Shoulkd we proceed?" true))
+(print (jty/confirm "Shoulkd we proceed?" false))
