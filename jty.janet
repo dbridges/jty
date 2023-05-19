@@ -1,4 +1,8 @@
+(import spork/rawterm)
+
 # Layout functions
+
+(defn- csi [str] (string "\e[" str))
 
 (def- escape-sequence '(sequence "\e[" (some (set "0123456789;")) "m"))
 
@@ -94,7 +98,30 @@
     :keyword (string "\e[" (get bg-colors col "39") "m" s "\e[49m")
     s))
 
-# Getting input
+# Cursor movement
+
+(defn move-cursor [row col]
+  (prin (csi (string/format "%d;%dH" row col))))
+
+(defn move-cursor-up [&opt n]
+  (default n 1)
+  (prin (csi (string/format "%dA" n))))
+
+(defn hide-cursor []
+  (prin (csi "?25l")))
+
+(defn show-cursor []
+  (prin (csi "?25h")))
+
+(defn clear-line []
+  (prin (csi "2K")))
+
+(defn clear-screen []
+  (prin (csi "2J"))
+  (move-cursor 1 1))
+
+# Input Prompts
+
 (defn prompt [question &opt dflt]
   (default dflt "")
   (def default-msg (if (= dflt "") "" (string " [" dflt "]")))
@@ -111,3 +138,86 @@
   (def dflt-string (if (= dflt true) "y" "n"))
   (def resp (prompt question dflt-string))
   (= resp "y"))
+
+# Renderable Widgets
+
+(defn- line-count [str]
+  (if (= str "") 0
+    (length (string/split "\n" str))))
+
+(defn- clear-view [view]
+  (repeat (line-count view)
+    (do
+      (clear-line)
+      (move-cursor-up))))
+
+(defn get-ascii-key []
+  (def [byte] (rawterm/getch))
+
+  (cond
+    (= byte 3)          :sigint
+    (= byte (chr " "))  :key-space
+    (= byte (chr ":"))  :key-colon
+    (= byte (chr ";"))  :key-semicolon
+    (= byte (chr "\\")) :key-backslash
+    (= byte (chr "/"))  :key-slash
+    (= byte (chr "\n")) :key-new-line
+    (= byte (chr "\r")) :key-return
+    (<= 33 byte 126)    (keyword (string "key-" (string/from-bytes byte)))
+    nil))
+
+
+(defn run-widget [c]
+  (def {:view view :update update :result result} c)
+
+  (var v "")
+  
+  (defn render [new-view]
+    (clear-view v)
+    (set v new-view)
+    (print v))
+
+  (defn cleanup []
+    (rawterm/end)
+    (show-cursor))
+
+  (defer (cleanup)
+    (rawterm/begin)
+    (hide-cursor)
+    (forever
+      (render (view))
+      (def key (get-ascii-key))
+      (case key
+        :sigint (do (cleanup) (os/exit 1))
+        (if (= (update {:type :key :key key}) :done)
+          (break)))))
+  
+  (result))
+
+(defn select-widget [opts]
+  (var i 0)
+
+  (defn view []
+    (string/join (map |(if (= $1 i)
+                           (bold (string "-> " $0))
+                           (string "   " $0))
+                      opts
+                      (range (length opts)))
+                 "\n"))
+
+  (defn update [msg]
+    (case (msg :type)
+      :key (case (msg :key)
+                 :key-j      (set i (mod (+ i 1) (length opts)))
+                 :key-k      (set i (mod (- i 1) (length opts)))
+                 :key-return :done)))
+ 
+  (defn result []
+    (opts i))
+
+  {:view view :update update :result result})
+
+
+(defn select [prompt opts]
+  (if (not= prompt "") (print prompt))
+  (run-widget (select-widget opts)))

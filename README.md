@@ -102,6 +102,24 @@ Utility functions for rich console output in the [Janet Language](https://janet-
        (jty/bg "#d1de18" " "))
 ```
 
+### Cursor Movement
+
+```janet
+# Show/hide the cursor indicator
+(jty/show-cursor)
+(jty/hide-cursor)
+
+# Move cursor to specific location
+(jty/move-cursor [10 20])
+
+# Move cursor up certain number of lines
+(jty/move-cursor-up 3)
+
+# Clear the line or screen
+(jty/clear-line)
+(jty/clear-screen)
+```
+
 ### Input
 
 `jty` provides two helper functions for asking for input. Both functions can be provided with a default value.
@@ -111,4 +129,11 @@ Utility functions for rich console output in the [Janet Language](https://janet-
 (jty/prompt "Confirm" "Y") # returns "Y" if the user does not type input
 (jty/prompt-number "Year") # loops until input can be parsed with scan-number
 (jty/prompt-number "Year" 10) # return 10 if the user does not type input
+```
+
+### Select Menu
+`jty` provides a simple select menu to pick from a list of choices.
+
+```janet
+(jty/select "Select an option (j/k to move)" ["red" "blue" "green"])
 ```

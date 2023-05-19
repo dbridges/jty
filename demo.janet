@@ -69,5 +69,7 @@
 (print (string (jty/prompt-number "Year born" (- ((os/date) :year) age))
                " was a good year"))
 
-(print (jty/confirm "Shoulkd we proceed?" true))
-(print (jty/confirm "Shoulkd we proceed?" false))
+(print (jty/confirm "Should we proceed?" true))
+(print (jty/confirm "Should we proceed?" false))
+
+(print (jty/select "Select an option (j/k to move)" ["red" "blue" "green"]))
