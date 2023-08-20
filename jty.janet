@@ -1,5 +1,15 @@
 (import spork/rawterm)
 
+# write to debug log
+
+(def debug-f (file/open "debug.log" :w))
+
+(defn- print-debug [str]
+  (file/write debug-f (string str))
+  (file/write debug-f "\n")
+  (file/flush debug-f))
+
+
 # Layout functions
 
 (defn- csi [str] (string "\e[" str))
@@ -139,7 +149,7 @@
   (def resp (prompt question dflt-string))
   (= resp "y"))
 
-# Renderable Widgets
+# Renderable Widgets - Experimental and not thread safe
 
 (defn- line-count [str]
   (if (= str "") 0
@@ -151,11 +161,11 @@
       (clear-line)
       (move-cursor-up))))
 
-(defn get-ascii-key []
-  (def [byte] (rawterm/getch))
 
+(def- key-buffer @[])
+
+(defn byte-to-key [byte]
   (cond
-    (= byte 3)          :sigint
     (= byte (chr " "))  :key-space
     (= byte (chr ":"))  :key-colon
     (= byte (chr ";"))  :key-semicolon
@@ -166,6 +176,41 @@
     (<= 33 byte 126)    (keyword (string "key-" (string/from-bytes byte)))
     nil))
 
+(def key-escape-sequences
+  { "[D" :key-left
+    "[C" :key-right
+    "[A" :key-up
+    "[B" :key-down })
+
+(defn read-key-escape-sequence []
+  (def [byte] (rawterm/getch))
+
+
+  (if (= byte (chr "["))
+    (do
+      (def s (string/from-bytes byte (get (rawterm/getch) 0)))
+      (if-let [key (key-escape-sequences s)]
+        key
+        (do
+          (array/push key-buffer (byte-to-key (get s 1)))
+          (array/push key-buffer (byte-to-key byte))
+          :key-escape)))
+    (do
+      (array/push key-buffer (byte-to-key byte))
+      :key-escape)))
+
+(defn read-key []
+  (def [byte] (rawterm/getch))
+
+  (cond
+    (= byte 3)          :sigint
+    (= byte (chr "\e")) (read-key-escape-sequence)
+    (byte-to-key byte)))
+
+(defn get-key []
+  (if-let [k (array/pop key-buffer)]
+    k
+    (read-key)))
 
 (defn run-widget [c]
   (def {:view view :update update :result result} c)
@@ -186,7 +231,7 @@
     (hide-cursor)
     (forever
       (render (view))
-      (def key (get-ascii-key))
+      (def key (get-key))
       (case key
         :sigint (do (cleanup) (os/exit 1))
         (if (= (update {:type :key :key key}) :done)
@@ -209,7 +254,9 @@
     (case (msg :type)
       :key (case (msg :key)
                  :key-j      (set i (mod (+ i 1) (length opts)))
+                 :key-down   (set i (mod (+ i 1) (length opts)))
                  :key-k      (set i (mod (- i 1) (length opts)))
+                 :key-up     (set i (mod (- i 1) (length opts)))
                  :key-return :done)))
  
   (defn result []
