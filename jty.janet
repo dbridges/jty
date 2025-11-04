@@ -226,26 +226,31 @@
     (rawterm/end)
     (show-cursor))
 
+  (defn quit []
+    (do (cleanup) (os/exit 1)))
+
   (defer (cleanup)
     (rawterm/begin)
     (hide-cursor)
     (forever
       (render (view))
       (def key (get-key))
-      (case key
-        :sigint (do (cleanup) (os/exit 1))
-        (if (= (update {:type :key :key key}) :done)
-          (break)))))
+      (if (= key :sigint) (quit))
+      (case (update {:type :key :key key})
+        :done (break)
+        :quit (quit))))
   
   (result))
 
 (defn select-widget [opts]
   (var i 0)
+  (def [rows cols] (rawterm/size))
+  (def option-width (- cols 4))
 
   (defn view []
     (string/join (map |(if (= $1 i)
-                           (bold (string "-> " $0))
-                           (string "   " $0))
+                           (bold (string " ⮕ " (fit-width $0 option-width)))
+                           (string "   " (fit-width $0 option-width)))
                       opts
                       (range (length opts)))
                  "\n"))
@@ -253,6 +258,7 @@
   (defn update [msg]
     (case (msg :type)
       :key (case (msg :key)
+                 :key-q      :quit
                  :key-j      (set i (mod (+ i 1) (length opts)))
                  :key-down   (set i (mod (+ i 1) (length opts)))
                  :key-k      (set i (mod (- i 1) (length opts)))
