@@ -1,5 +1,11 @@
 (import spork/rawterm)
 
+(defn clamp [v min-v max-v]
+  (cond
+    (< v min-v) min-v
+    (> v max-v) max-v
+    v))
+
 # write to debug log
 
 (def debug-f (file/open "debug.log" :w))
@@ -244,25 +250,40 @@
 
 (defn select-widget [opts]
   (var i 0)
+  (var scroll-top 0)
   (def [rows cols] (rawterm/size))
   (def option-width (- cols 4))
+  (def list-height (min (- rows 2) (length opts)))
 
   (defn view []
-    (string/join (map |(if (= $1 i)
+    (def scrolled-opts (array/slice opts scroll-top (+ list-height scroll-top)))
+    (string/join (map |(if (= (+ $1 scroll-top) i)
                            (bold (string " ⮕ " (fit-width $0 option-width)))
                            (string "   " (fit-width $0 option-width)))
-                      opts
-                      (range (length opts)))
+                      scrolled-opts
+                      (range (length scrolled-opts)))
                  "\n"))
 
   (defn update [msg]
+    (defn handle-up []
+      (set i (clamp (dec i) 0 (dec (length opts))))
+      (when (and (> (length opts) list-height)
+                 (< i scroll-top))
+        (-- scroll-top)))
+
+    (defn handle-down []
+      (set i (clamp (inc i) 0 (dec (length opts))))
+      (when (and (> (length opts) list-height)
+                 (>= i (+ list-height scroll-top)))
+        (++ scroll-top)))
+
     (case (msg :type)
       :key (case (msg :key)
                  :key-q      :quit
-                 :key-j      (set i (mod (+ i 1) (length opts)))
-                 :key-down   (set i (mod (+ i 1) (length opts)))
-                 :key-k      (set i (mod (- i 1) (length opts)))
-                 :key-up     (set i (mod (- i 1) (length opts)))
+                 :key-j      (handle-down)
+                 :key-down   (handle-down)
+                 :key-k      (handle-up)
+                 :key-up     (handle-up)
                  :key-return :done)))
  
   (defn result []
