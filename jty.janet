@@ -191,7 +191,6 @@
 (defn read-key-escape-sequence []
   (def [byte] (rawterm/getch))
 
-
   (if (= byte (chr "["))
     (do
       (def s (string/from-bytes byte (get (rawterm/getch) 0)))
@@ -265,13 +264,13 @@
                  "\n"))
 
   (defn update [msg]
-    (defn handle-up []
+    (defn handle-key-up []
       (set i (clamp (dec i) 0 (dec (length opts))))
       (when (and (> (length opts) list-height)
                  (< i scroll-top))
         (-- scroll-top)))
 
-    (defn handle-down []
+    (defn handle-key-down []
       (set i (clamp (inc i) 0 (dec (length opts))))
       (when (and (> (length opts) list-height)
                  (>= i (+ list-height scroll-top)))
@@ -280,10 +279,10 @@
     (case (msg :type)
       :key (case (msg :key)
                  :key-q      :quit
-                 :key-j      (handle-down)
-                 :key-down   (handle-down)
-                 :key-k      (handle-up)
-                 :key-up     (handle-up)
+                 :key-j      (handle-key-down)
+                 :key-down   (handle-key-down)
+                 :key-k      (handle-key-up)
+                 :key-up     (handle-key-up)
                  :key-return :done)))
  
   (defn result []
