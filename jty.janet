@@ -151,9 +151,20 @@
 
 (defn confirm [question &opt dflt]
   (default dflt true)
-  (def dflt-string (if (= dflt true) "y" "n"))
-  (def resp (prompt question dflt-string))
-  (= resp "y"))
+  (def dflt-string (if dflt "y" "n"))
+  (var resp dflt-string)
+
+  (prin (string question " [" dflt-string "] "))
+  (flush)
+
+  (defer (rawterm/end)
+    (rawterm/begin)
+    (let [[char] (rawterm/getch)]
+      (unless (= char (chr "\r"))
+        (set resp (string/from-bytes char)))))
+
+  (print resp)
+  (= (string/ascii-lower resp) "y"))
 
 # Renderable Widgets - Experimental and not thread safe
 
