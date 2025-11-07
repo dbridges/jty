@@ -73,3 +73,4 @@
 (print (jty/confirm "Should we proceed?" false))
 
 (print (jty/select "Select an option (j/k to move)" ["red" "blue" "green"]))
+(pp (jty/select-by "Select" [{:name "Fran" :age 20} {:name "Joe" :age 30}] |($ :name)))

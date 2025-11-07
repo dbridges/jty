@@ -305,3 +305,11 @@
 (defn select [prompt opts]
   (if (not= prompt "") (print prompt))
   (run-widget (select-widget opts)))
+
+(defn select-by [prompt iter label-fn]
+  (def opts (map label-fn iter))
+  (def selected-label (select prompt opts))
+  (def idx (find-index |(= (label-fn $) selected-label) iter))
+  (if (nil? idx)
+    nil
+    (iter idx)))
