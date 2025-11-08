@@ -11,10 +11,13 @@
 (def debug-f (file/open "debug.log" :w))
 
 (defn- print-debug [str]
-  (file/write debug-f (string str))
+  (file/write debug-f (string/format "%q" str))
   (file/write debug-f "\n")
   (file/flush debug-f))
 
+(defn- echo [s]
+  (print-debug s)
+  s)
 
 # Layout functions
 
@@ -24,7 +27,7 @@
 
 (defn width [s]
   "Returns the length of the string with escape sequences removed"
-  (length (peg/replace-all escape-sequence "" s)))
+  (rawterm/monowidth (peg/replace-all escape-sequence "" s)))
 
 (defn- pad [s len dir &opt char]
   (default char " ")
@@ -168,16 +171,23 @@
 
 # Renderable Widgets - Experimental and not thread safe
 
-(defn- line-count [str]
-  (if (= str "") 0
-    (length (string/split "\n" str))))
+(defn- line-height [line term-width]
+  (math/ceil (/ (width line) term-width)))
+
+(defn- view-height [str]
+  (let [[_ width] (rawterm/size)]
+    (if (= str "")
+      0
+      (->>
+        (string/split "\n" str)
+        (map |(line-height $ width))
+        (sum)))))
 
 (defn- clear-view [view]
-  (repeat (line-count view)
+  (repeat (view-height view)
     (do
       (clear-line)
       (move-cursor-up))))
-
 
 (def- key-buffer @[])
 
@@ -228,13 +238,14 @@
     k
     (read-key)))
 
-(defn run-widget [c]
-  (def {:view view :update update :result result} c)
+(defn run-widget [c &opt fullscreen]
+  (default fullscreen false)
 
+  (def {:view view :update update :result result} c)
   (var v "")
   
   (defn render [new-view]
-    (clear-view v)
+    (if fullscreen (clear-screen) (clear-view v))
     (set v new-view)
     (print v))
 
@@ -274,19 +285,19 @@
                       (range (length scrolled-opts)))
                  "\n"))
 
+  (defn handle-key-up []
+    (set i (clamp (dec i) 0 (dec (length opts))))
+    (when (and (> (length opts) list-height)
+               (< i scroll-top))
+      (-- scroll-top)))
+
+  (defn handle-key-down []
+    (set i (clamp (inc i) 0 (dec (length opts))))
+    (when (and (> (length opts) list-height)
+               (>= i (+ list-height scroll-top)))
+      (++ scroll-top)))
+
   (defn update [msg]
-    (defn handle-key-up []
-      (set i (clamp (dec i) 0 (dec (length opts))))
-      (when (and (> (length opts) list-height)
-                 (< i scroll-top))
-        (-- scroll-top)))
-
-    (defn handle-key-down []
-      (set i (clamp (inc i) 0 (dec (length opts))))
-      (when (and (> (length opts) list-height)
-                 (>= i (+ list-height scroll-top)))
-        (++ scroll-top)))
-
     (case (msg :type)
       :key (case (msg :key)
                  :key-q      :quit
